@@ -1,0 +1,8 @@
+{
+    "serverID": "server1",
+    "protocol": "tcp",
+    "ipAddress": "127.0.0.1",
+    "port": "8001",
+    "persistentStorageContainer": {"blah..file"},
+    "methods": ["lookup","insert","delete","listKeys","listIDs","shutdown"]
+    }

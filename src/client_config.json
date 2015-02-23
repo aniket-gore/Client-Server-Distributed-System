@@ -1,0 +1,7 @@
+{
+    "serverID": "server1",
+    "protocol": "tcp",
+    "ipAddress": ,
+    "port": ,
+    "methods": ["lookup","insert","delete","listKeys","listIDs","shutdown"]
+    }
