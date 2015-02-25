@@ -1,7 +1,7 @@
 {
     "serverID": "server1",
     "protocol": "tcp",
-    "ipAddress": ,
-    "port": ,
+    "ipAddress": "127.0.0.1",
+    "port": "8010",
     "methods": ["lookup","insert","delete","listKeys","listIDs","shutdown"]
     }

@@ -1,2 +1,14 @@
 sudo netstat -lpn | grep :port
 kill -9 pid
+
+
+LOOK-UP: 
+client_code client_config.json '{"jsonrpc":"2.0","method":"lookup","params":["keyA","relationA"],"id":10}'
+
+INSERT: 
+client_code client_config.json '{"jsonrpc":"2.0","method":"insert","params":["keyA","relationA",{"a":1,"b":2}],"id":5}'
+
+SHUTDOWN:
+client_code client_config.json '{"method":"shutdown","params":[],"id":null}'
+
+

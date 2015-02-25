@@ -2,7 +2,7 @@
     "serverID": "server1",
     "protocol": "tcp",
     "ipAddress": "127.0.0.1",
-    "port": "8001",
-    "persistentStorageContainer": {"blah..file"},
+    "port": "8010",
+    "persistentStorageContainer": {"file": "persistence_storage.txt"},
     "methods": ["lookup","insert","delete","listKeys","listIDs","shutdown"]
-    }
+}
