@@ -29,6 +29,8 @@ type DICT3 struct {
 
 type config_type map[string]interface{}
 
+var storageContainerPath interface{}
+
 /**
 Method: insert()
 Description: This method inserts the request Triplet into persistent storage if not already present
@@ -98,8 +100,42 @@ func (dict3 *DICT3) lookup(request Request) Response {
 	return response
 }
 
+/**
+Method: delete()
+Description: This method deletes the triple identified by key,relation
+*/
+func (dict3 *DICT3) delete(request Request) {
+	var key, relation string
+	// Identify key,relation from request object
+	switch interface_type := request.Fields["params"].(type) {
+	case []interface{}:
+		for k, v := range interface_type {
+			if k == 0 {
+				key = v.(string)
+			}
+			if k == 1 {
+				relation = v.(string)
+			}
+		}
+	}
+	// Look-up and delete triple
+	_, ok := dict3.Triplet[key][relation]
+	if ok {
+		delete(dict3.Triplet[key], relation)
+		if !(len(dict3.Triplet[key]) > 1) {
+			delete(dict3.Triplet, key)
+		}
+	}
+}
+
+/**
+Method: shutdown()
+Description: This method dumps the DICT3 map into a file then closes the listener and exits the program
+*/
 func (dict3 *DICT3) shutdown(request Request) {
+	dict3.dumpToPersistentStorage()
 	dict3.listener.Close()
+	os.Exit(1)
 }
 
 /**
@@ -117,10 +153,15 @@ func (dict3 *DICT3) ServiceRequest(args []byte, reply *[]byte) error {
 
 	// Call appropriate method handler
 	switch request.Fields["method"] {
-	case "insert":
-		response = dict3.insert(request)
 	case "lookup":
 		response = dict3.lookup(request)
+	case "insert":
+		response = dict3.insert(request)
+	case "insertOrUpdate":
+		response = dict3.insert(request)
+		response = Response{}
+	case "delete":
+		dict3.delete(request)
 	case "shutdown":
 		dict3.shutdown(request)
 	}
@@ -133,10 +174,10 @@ func (dict3 *DICT3) ServiceRequest(args []byte, reply *[]byte) error {
 Method: dumpToPersistentStorage()
 Description: This method dumps the DICT3 data to a file before closing the connection
 */
-func (dict3 *DICT3) dumpToPersistentStorage(filemap interface{}) {
+func (dict3 *DICT3) dumpToPersistentStorage() {
 	data_bytes, _ := json.Marshal(dict3.Triplet)
 
-	filepath := filemap.(map[string]interface{})["file"].(string)
+	filepath := storageContainerPath.(map[string]interface{})["file"].(string)
 	ioutil.WriteFile(filepath, data_bytes, 0644)
 }
 
@@ -177,14 +218,13 @@ func main() {
 	checkTCPError(err)
 	// Retrieve the DICT3 persistent storage
 	type_dict3.fetchFromPersistentStorage(config["persistentStorageContainer"])
+	storageContainerPath = config["persistentStorageContainer"]
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			// Close connecton and store DICT3 to a file
-			fmt.Println("About to close connection!")
-			listener.Close()
-			type_dict3.dumpToPersistentStorage(config["persistentStorageContainer"])
-			os.Exit(1)
+			// ignore any errors by client side, don't shutdown server yet
+			continue
 		}
 		jsonrpc.ServeConn(conn)
 	}

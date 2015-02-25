@@ -37,8 +37,8 @@ func main() {
 	args_bytes := []byte(os.Args[2])
 	err = client.Call("DICT3.ServiceRequest", args_bytes, &response)
 	if err != nil {
-		log.Fatal("Lookup error", err)
 	}
 	write_to_console := os.Stdout
 	fmt.Fprintf(write_to_console, string(response))
+	fmt.Fprintf(write_to_console, "\n")
 }

@@ -11,4 +11,8 @@ client_code client_config.json '{"jsonrpc":"2.0","method":"insert","params":["ke
 SHUTDOWN:
 client_code client_config.json '{"method":"shutdown","params":[],"id":null}'
 
+INSERTORUPDATE:
+client_code client_config.json '{"jsonrpc":"2.0","method":"insertOrUpdate","params":["keyA","relationA",{"a":1,"b":2}],"id":null}'
 
+DELETE:
+client_code client_config.json '{"jsonrpc":"2.0","method":"delete","params":["keyA","relationA"],"id":null}'
