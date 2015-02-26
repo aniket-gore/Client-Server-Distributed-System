@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// Map to store server configuration
 type config_type map[string]interface{}
 
 func main() {
@@ -35,9 +36,13 @@ func main() {
 	// Make server request
 	var response []byte
 	args_bytes := []byte(os.Args[2])
-	err = client.Call("DICT3.ServiceRequest", args_bytes, &response)
-	if err != nil {
+
+	// Make asynchronous request to the server
+	rpc_call := client.Go("DICT3.ServiceRequest", args_bytes, &response, nil)
+	rpc_call = <-rpc_call.Done
+	if rpc_call.Error != nil {
 	}
+
 	write_to_console := os.Stdout
 	fmt.Fprintf(write_to_console, string(response))
 	fmt.Fprintf(write_to_console, "\n")

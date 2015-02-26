@@ -11,10 +11,8 @@ import (
 	"os"
 )
 
-// structure for response object
-type Response struct {
-	Fields map[string]interface{}
-}
+// Response object
+type Response map[string]interface{}
 
 // structure for request object
 type Request struct {
@@ -27,6 +25,7 @@ type DICT3 struct {
 	listener net.Listener
 }
 
+//Map to store server configuration
 type config_type map[string]interface{}
 
 var storageContainerPath interface{}
@@ -60,11 +59,10 @@ func (dict3 *DICT3) insert(request Request) Response {
 	dict3.Triplet[key][relation] = value
 
 	// Prepare the response object
-	response := Response{}
-	response.Fields = make(map[string]interface{})
-	response.Fields["result"] = true
-	response.Fields["error"] = -1
-	response.Fields["id"] = request.Fields["id"]
+	response := make(map[string]interface{})
+	response["result"] = true
+	response["error"] = -1
+	response["id"] = request.Fields["id"]
 	return response
 }
 
@@ -87,16 +85,16 @@ func (dict3 *DICT3) lookup(request Request) Response {
 		}
 	}
 	// Look-up and prepare response object
-	response := Response{}
-	response.Fields = make(map[string]interface{})
+	//	response := Response{}
+	response := make(map[string]interface{})
 	if val, ok := dict3.Triplet[key][relation]; ok {
-		response.Fields["result"] = val
-		response.Fields["error"] = -1
+		response["result"] = val
+		response["error"] = nil
 	} else {
-		response.Fields["result"] = nil
-		response.Fields["error"] = 1
+		response["result"] = nil
+		response["error"] = 1
 	}
-	response.Fields["id"] = request.Fields["id"]
+	response["id"] = request.Fields["id"]
 	return response
 }
 
@@ -129,6 +127,49 @@ func (dict3 *DICT3) delete(request Request) {
 }
 
 /**
+Method: listKeys()
+Description: This method lists all the keys in DICT3
+*/
+func (dict3 *DICT3) listKeys(request Request) Response {
+	// Get all unique keys from DICT3
+	unique_keys := make([]string, 0, len(dict3.Triplet))
+	for key := range dict3.Triplet {
+		unique_keys = append(unique_keys, key)
+	}
+
+	// Prepare response object with unique keys
+	response := make(map[string]interface{})
+	response["result"] = unique_keys
+	response["id"] = request.Fields["id"]
+	response["error"] = nil
+	return response
+}
+
+/**
+Method: listIDs()
+Description: This method lists all key,relation pairs in DICT3
+*/
+func (dict3 *DICT3) listIDs(request Request) Response {
+	// Get all unique key,relation pairs from DICT3
+	unique_pairs := make([][]string, 0, len(dict3.Triplet))
+	for key, relation_map := range dict3.Triplet {
+		for relation := range relation_map {
+			pair := make([]string, 0, 2)
+			pair = append(pair, key)
+			pair = append(pair, relation)
+			unique_pairs = append(unique_pairs, pair)
+		}
+	}
+
+	// Prepare response object with unique keys
+	response := make(map[string]interface{})
+	response["result"] = unique_pairs
+	response["id"] = request.Fields["id"]
+	response["error"] = nil
+	return response
+}
+
+/**
 Method: shutdown()
 Description: This method dumps the DICT3 map into a file then closes the listener and exits the program
 */
@@ -148,8 +189,7 @@ func (dict3 *DICT3) ServiceRequest(args []byte, reply *[]byte) error {
 	err := json.Unmarshal(args, &request.Fields)
 	checkBadRequestError(err)
 
-	response := Response{}
-	response.Fields = make(map[string]interface{})
+	response := make(map[string]interface{})
 
 	// Call appropriate method handler
 	switch request.Fields["method"] {
@@ -162,6 +202,10 @@ func (dict3 *DICT3) ServiceRequest(args []byte, reply *[]byte) error {
 		response = Response{}
 	case "delete":
 		dict3.delete(request)
+	case "listKeys":
+		response = dict3.listKeys(request)
+	case "listIDs":
+		response = dict3.listIDs(request)
 	case "shutdown":
 		dict3.shutdown(request)
 	}

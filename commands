@@ -14,5 +14,11 @@ client_code client_config.json '{"method":"shutdown","params":[],"id":null}'
 INSERTORUPDATE:
 client_code client_config.json '{"jsonrpc":"2.0","method":"insertOrUpdate","params":["keyA","relationA",{"a":1,"b":2}],"id":null}'
 
+LISTKEYS:
+client_code client_config.json '{"jsonrpc":"2.0","method":"listKeys","params":[],"id":670}'
+
+LISTIDS:
+client_code client_config.json '{"jsonrpc":"2.0","method":"listIDs","params":[],"id":675}'
+
 DELETE:
 client_code client_config.json '{"jsonrpc":"2.0","method":"delete","params":["keyA","relationA"],"id":null}'
