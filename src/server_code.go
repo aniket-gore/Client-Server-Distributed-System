@@ -28,13 +28,59 @@ type DICT3 struct {
 //Map to store server configuration
 type config_type map[string]interface{}
 
-var storageContainerPath interface{}
+var (
+	storageContainerPath interface{}
+)
 
 /**
-Method: insert()
+Method: Lookup()
+Description: This method performs lookup for requested key,relation and returns value if present
+*/
+func (dict3 *DICT3) Lookup(args []byte, reply *[]byte) error {
+	// Unmarshal data and check for errors
+	request := Request{}
+	err := json.Unmarshal(args, &request.Fields)
+	checkBadRequestError(err)
+
+	var key, relation string
+	// Identify key,relation from request object
+	switch interface_type := request.Fields["params"].(type) {
+	case []interface{}:
+		for k, v := range interface_type {
+			if k == 0 {
+				key = v.(string)
+			}
+			if k == 1 {
+				relation = v.(string)
+			}
+		}
+	}
+	// Look-up and prepare response object
+	response := make(map[string]interface{})
+	if val, ok := dict3.Triplet[key][relation]; ok {
+		response["result"] = val
+		response["error"] = nil
+	} else {
+		response["result"] = nil
+		response["error"] = 1
+	}
+	response["id"] = request.Fields["id"]
+
+	// Marshal the response
+	*reply, _ = json.Marshal(&response)
+	return nil
+}
+
+/**
+Method: Insert()
 Description: This method inserts the request Triplet into persistent storage if not already present
 */
-func (dict3 *DICT3) insert(request Request) Response {
+func (dict3 *DICT3) Insert(args []byte, reply *[]byte) error {
+	// Unmarshal data and check for errors
+	request := Request{}
+	err := json.Unmarshal(args, &request.Fields)
+	checkBadRequestError(err)
+
 	var key, relation string
 	var value interface{}
 	// Identify the key,relation,value from request object
@@ -61,48 +107,64 @@ func (dict3 *DICT3) insert(request Request) Response {
 	// Prepare the response object
 	response := make(map[string]interface{})
 	response["result"] = true
-	response["error"] = -1
+	response["error"] = nil
 	response["id"] = request.Fields["id"]
-	return response
+
+	// Marshal the response
+	*reply, _ = json.Marshal(&response)
+	return nil
 }
 
 /**
-Method: lookup()
-Description: This method performs lookup for requested key,relation and returns value if present
+Method: InsertOrUpdate()
+Description: This method inserts the request Triplet into persistent storage if not already present or updates it if present
 */
-func (dict3 *DICT3) lookup(request Request) Response {
+func (dict3 *DICT3) InsertOrUpdate(args []byte, reply *[]byte) error {
+	// Unmarshal data and check for errors
+	request := Request{}
+	err := json.Unmarshal(args, &request.Fields)
+	checkBadRequestError(err)
+
 	var key, relation string
-	// Identify key,relation from request object
+	var value interface{}
+	// Identify the key,relation,value from request object
 	switch interface_type := request.Fields["params"].(type) {
 	case []interface{}:
 		for k, v := range interface_type {
 			if k == 0 {
 				key = v.(string)
-			}
-			if k == 1 {
+			} else if k == 1 {
 				relation = v.(string)
+			} else if k == 2 {
+				value = v
 			}
 		}
 	}
-	// Look-up and prepare response object
-	//	response := Response{}
-	response := make(map[string]interface{})
-	if val, ok := dict3.Triplet[key][relation]; ok {
-		response["result"] = val
-		response["error"] = nil
-	} else {
-		response["result"] = nil
-		response["error"] = 1
+	// Update the persistent storage with new triplet
+	inner, ok := dict3.Triplet[key]
+	if !ok {
+		inner = make(map[string]interface{})
+		dict3.Triplet[key] = inner
 	}
-	response["id"] = request.Fields["id"]
-	return response
+	dict3.Triplet[key][relation] = value
+
+	// Prepare the response object
+	response := make(map[string]interface{})
+	// Marshal the response
+	*reply, _ = json.Marshal(&response)
+	return nil
 }
 
 /**
-Method: delete()
+Method: Delete()
 Description: This method deletes the triple identified by key,relation
 */
-func (dict3 *DICT3) delete(request Request) {
+func (dict3 *DICT3) Delete(args []byte, reply *[]byte) error {
+	// Unmarshal data and check for errors
+	request := Request{}
+	err := json.Unmarshal(args, &request.Fields)
+	checkBadRequestError(err)
+
 	var key, relation string
 	// Identify key,relation from request object
 	switch interface_type := request.Fields["params"].(type) {
@@ -116,6 +178,7 @@ func (dict3 *DICT3) delete(request Request) {
 			}
 		}
 	}
+
 	// Look-up and delete triple
 	_, ok := dict3.Triplet[key][relation]
 	if ok {
@@ -124,13 +187,23 @@ func (dict3 *DICT3) delete(request Request) {
 			delete(dict3.Triplet, key)
 		}
 	}
+
+	response := make(map[string]interface{})
+	// Marshal the response
+	*reply, _ = json.Marshal(&response)
+	return nil
 }
 
 /**
-Method: listKeys()
+Method: ListKeys()
 Description: This method lists all the keys in DICT3
 */
-func (dict3 *DICT3) listKeys(request Request) Response {
+func (dict3 *DICT3) ListKeys(args []byte, reply *[]byte) error {
+	// Unmarshal data and check for errors
+	request := Request{}
+	err := json.Unmarshal(args, &request.Fields)
+	checkBadRequestError(err)
+
 	// Get all unique keys from DICT3
 	unique_keys := make([]string, 0, len(dict3.Triplet))
 	for key := range dict3.Triplet {
@@ -142,14 +215,22 @@ func (dict3 *DICT3) listKeys(request Request) Response {
 	response["result"] = unique_keys
 	response["id"] = request.Fields["id"]
 	response["error"] = nil
-	return response
+
+	// Marshal the response
+	*reply, _ = json.Marshal(&response)
+	return nil
 }
 
 /**
-Method: listIDs()
+Method: ListIDs()
 Description: This method lists all key,relation pairs in DICT3
 */
-func (dict3 *DICT3) listIDs(request Request) Response {
+func (dict3 *DICT3) ListIDs(args []byte, reply *[]byte) error {
+	// Unmarshal data and check for errors
+	request := Request{}
+	err := json.Unmarshal(args, &request.Fields)
+	checkBadRequestError(err)
+
 	// Get all unique key,relation pairs from DICT3
 	unique_pairs := make([][]string, 0, len(dict3.Triplet))
 	for key, relation_map := range dict3.Triplet {
@@ -166,49 +247,28 @@ func (dict3 *DICT3) listIDs(request Request) Response {
 	response["result"] = unique_pairs
 	response["id"] = request.Fields["id"]
 	response["error"] = nil
-	return response
+
+	// Marshal the response
+	*reply, _ = json.Marshal(&response)
+	return nil
 }
 
 /**
-Method: shutdown()
+Method: Shutdown()
 Description: This method dumps the DICT3 map into a file then closes the listener and exits the program
 */
-func (dict3 *DICT3) shutdown(request Request) {
-	dict3.dumpToPersistentStorage()
-	dict3.listener.Close()
-	os.Exit(1)
-}
-
-/**
-Method: ServiceRequest()
-Description: Accepts requests from the client and calls appropriate method handler
-*/
-func (dict3 *DICT3) ServiceRequest(args []byte, reply *[]byte) error {
+func (dict3 *DICT3) Shutdown(args []byte, reply *[]byte) error {
 	// Unmarshal data and check for errors
 	request := Request{}
 	err := json.Unmarshal(args, &request.Fields)
 	checkBadRequestError(err)
 
-	response := make(map[string]interface{})
+	// Dump to peristent storage and close the listener
+	dict3.dumpToPersistentStorage()
+	dict3.listener.Close()
+	os.Exit(1)
 
-	// Call appropriate method handler
-	switch request.Fields["method"] {
-	case "lookup":
-		response = dict3.lookup(request)
-	case "insert":
-		response = dict3.insert(request)
-	case "insertOrUpdate":
-		response = dict3.insert(request)
-		response = Response{}
-	case "delete":
-		dict3.delete(request)
-	case "listKeys":
-		response = dict3.listKeys(request)
-	case "listIDs":
-		response = dict3.listIDs(request)
-	case "shutdown":
-		dict3.shutdown(request)
-	}
+	response := make(map[string]interface{})
 	// Marshal the response
 	*reply, _ = json.Marshal(&response)
 	return nil
@@ -240,7 +300,6 @@ func (dict3 *DICT3) fetchFromPersistentStorage(filemap interface{}) {
 func main() {
 	type_dict3 := new(DICT3)
 	type_dict3.Triplet = make(map[string]map[string]interface{})
-	rpc.Register(type_dict3)
 
 	// Read configuration file
 	var config config_type
@@ -253,6 +312,9 @@ func main() {
 		log.Fatal("Cannot read config file:", err)
 	}
 
+	// Register the server name
+	rpc.RegisterName(config["serverID"].(string), type_dict3)
+
 	// Set connection parameters
 	tcpAddr, err := net.ResolveTCPAddr("tcp", config["ipAddress"].(string)+":"+config["port"].(string))
 	checkTCPError(err)
@@ -260,6 +322,7 @@ func main() {
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	type_dict3.listener = listener
 	checkTCPError(err)
+
 	// Retrieve the DICT3 persistent storage
 	type_dict3.fetchFromPersistentStorage(config["persistentStorageContainer"])
 	storageContainerPath = config["persistentStorageContainer"]

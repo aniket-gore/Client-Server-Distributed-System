@@ -1,7 +1,3 @@
-sudo netstat -lpn | grep :port
-kill -9 pid
-
-
 LOOK-UP: 
 client_code client_config.json '{"jsonrpc":"2.0","method":"lookup","params":["keyA","relationA"],"id":10}'
 
