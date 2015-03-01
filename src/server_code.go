@@ -96,17 +96,37 @@ func (dict3 *DICT3) Insert(args []byte, reply *[]byte) error {
 			}
 		}
 	}
-	// Update the persistent storage with new triplet
-	inner, ok := dict3.Triplet[key]
-	if !ok {
-		inner = make(map[string]interface{})
-		dict3.Triplet[key] = inner
-	}
-	dict3.Triplet[key][relation] = value
 
 	// Prepare the response object
 	response := make(map[string]interface{})
-	response["result"] = true
+
+	// Check if the key,relation are already present
+	var need_to_insert bool
+	inner, ok := dict3.Triplet[key]
+	// If key not present, perform Insert
+	if !ok {
+		inner = make(map[string]interface{})
+		dict3.Triplet[key] = inner
+		dict3.Triplet[key][relation] = value
+		need_to_insert = true
+		// If key present, check if relation is present
+	} else {
+		_, ok := dict3.Triplet[key][relation]
+		// If relation not present, perform Insert
+		if !ok {
+			dict3.Triplet[key][relation] = value
+			need_to_insert = true
+			// If relation is also present, do nothing
+		} else {
+			need_to_insert = false
+		}
+	}
+
+	if need_to_insert {
+		response["result"] = true
+	} else {
+		response["result"] = false
+	}
 	response["error"] = nil
 	response["id"] = request.Fields["id"]
 
