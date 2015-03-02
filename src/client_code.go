@@ -12,14 +12,22 @@ import (
 	"unicode"
 )
 
+// Request message structure
+type Request struct {
+	Method string        `json:"method"`
+	Params []interface{} `json:"params"`
+	Id     int           `json:"id"`
+}
+
+// Response message structure
+type Response struct {
+	Result []interface{} `json:"result"`
+	Id     int           `json:"id"`
+	Error  interface{}   `json:"error"`
+}
+
 // Map to store server configuration
 type config_type map[string]interface{}
-
-// Map to store command request
-type request_type map[string]interface{}
-
-// Response msg
-type response_msg_type map[string]interface{}
 
 func main() {
 	// Read server configuration file
@@ -42,53 +50,43 @@ func main() {
 		log.Fatal("Dialing Error: ", err)
 	}
 
-	var response []byte
-	var request request_type
-	response_channel := make(chan *rpc.Call, 10)
+	response_channel := make(chan *rpc.Call, 100)
 	var rpc_call *rpc.Call
-
+	request_msg := Request{}
 	var count_of_requests int
+
 	scanner := bufio.NewScanner(os.Stdin)
+	// Read the input file and make asynchronous requests
 	for scanner.Scan() {
-		// Make a series of asynchronous requests to the server
-		//	for _, arg := range os.Args[2:] {
-		// Read method name from request JSON object
-		//		args_bytes := []byte(arg)
 		args_bytes := []byte(scanner.Text())
-		//	fmt.Println("Reqest: ", count_of_requests, " : ", scanner.Text())
-		request = request_type{}
-		err = json.Unmarshal(args_bytes, &request)
+		err = json.Unmarshal(args_bytes, &request_msg)
 		// Ignore the bad requests and proceed with next requests
 		if err != nil {
-			//	fmt.Println("Error reading request JSON object.")
+			fmt.Println("Error reading request JSON object.")
 			continue
 		}
 
-		count_of_requests += 1
 		// Convert first character of method name to uppercase
-		method_name := request["method"].(string)
+		method_name := request_msg.Method
 		method_name = string(unicode.ToUpper(rune(method_name[0]))) + method_name[1:]
 
-		// Make asynchronous request to the server
-		response = nil
-		rpc_call = client.Go(config["serverID"].(string)+"."+method_name, args_bytes, &response, response_channel)
-		//	}
+		response_msg := Response{}
+		count_of_requests += 1
 
-		// Receive the responses from the server
-		response_msg := response_msg_type{}
-		//	var marshaled_response []byte
-		//	for i := 0; i < len(os.Args[2:]); i++ {
-		//	for i := 0; i < count_of_requests; i++ {
+		// Make asynchronous request to the server
+		rpc_call = client.Go(config["serverID"].(string)+"."+method_name, request_msg, &response_msg, response_channel)
+	}
+
+	// Asynchronously receive all the responses from the server
+	for i := 0; i < count_of_requests; i++ {
 		rpc_call = <-response_channel
 		if rpc_call.Error != nil {
 		}
-		response_msg = response_msg_type{}
-		//		marshaled_reponse = []byte
-		err = json.Unmarshal(*(rpc_call.Reply).(*[]byte), &response_msg)
-
 		// Print the response as a JSON object
-		marshaled_response, _ := json.Marshal(response_msg)
-		fmt.Println(string(marshaled_response))
+		marshaled_response, _ := json.Marshal(rpc_call.Reply)
+		// Display on Standard Output only if response not empty
+		if len(marshaled_response) > 35 {
+			fmt.Println(string(marshaled_response))
+		}
 	}
-
 }
