@@ -19,7 +19,3 @@ client_code client_config.json '{"jsonrpc":"2.0","method":"listIDs","params":[],
 DELETE:
 client_code client_config.json '{"jsonrpc":"2.0","method":"delete","params":["keyA","relationA"],"id":null}'
 
-
-Me file (standard input )line by line read karto
-so each line is a command
-scanner := bufio.NewScanner(os.Stdin)
