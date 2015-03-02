@@ -248,11 +248,13 @@ func main() {
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	type_dict3.listener = listener
 	checkTCPError(err)
+	fmt.Println("Server Started!")
 
 	// Retrieve the DICT3 persistent storage
 	type_dict3.fetchFromPersistentStorage(config["persistentStorageContainer"])
 	storageContainerPath = config["persistentStorageContainer"]
 
+	fmt.Println("Listening to requests...")
 	// Indefinitely listen and serve the requests
 	for {
 		conn, err := listener.Accept()
