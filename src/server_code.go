@@ -262,7 +262,7 @@ func main() {
 			// ignore any errors by client side, don't shutdown server yet
 			continue
 		}
-		jsonrpc.ServeConn(conn)
+		go jsonrpc.ServeConn(conn)
 	}
 }
 

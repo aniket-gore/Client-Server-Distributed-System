@@ -62,7 +62,6 @@ func main() {
 		err = json.Unmarshal(args_bytes, &request_msg)
 		// Ignore the bad requests and proceed with next requests
 		if err != nil {
-			fmt.Println("Error reading request JSON object.")
 			continue
 		}
 
