@@ -242,7 +242,7 @@ func main() {
 	rpc.RegisterName(config["serverID"].(string), type_dict3)
 
 	// Set connection parameters
-	tcpAddr, err := net.ResolveTCPAddr("tcp", config["ipAddress"].(string)+":"+config["port"].(string))
+	tcpAddr, err := net.ResolveTCPAddr("tcp", ":"+config["port"].(string))
 	checkTCPError(err)
 
 	listener, err := net.ListenTCP("tcp", tcpAddr)
